@@ -22,6 +22,9 @@
                         <button onclick="localStorage.clear(); window.location.reload()" style="padding: 12px 24px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                             Reiniciar Juego
                         </button>
+                        <div style="margin-top: 40px; text-align: left; background: #0f172a; padding: 15px; border-radius: 8px; font-size: 12px; color: #64748b; width: 90%; max-width: 600px; overflow-x: auto;">
+                            Detalles: ${source}:${lineno}
+                        </div>
                     </div>
                 `;
             }
@@ -41,12 +44,13 @@
     <!-- 3. BABEL -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- 4. IMPORT MAP (LIMPIO: Solo React 18 y GenAI) -->
+    <!-- 4. IMPORT MAP (LIMPIO Y CORREGIDO) -->
+    <!-- Elimina React 19 y Vite para evitar conflictos -->
     <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.2.0?dev",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?dev",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
     "@google/genai": "https://esm.sh/@google/genai@0.1.1",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
@@ -95,18 +99,18 @@
     <div id="root">
         <div class="flex items-center justify-center h-screen flex-col gap-4">
             <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <div class="text-slate-400 animate-pulse font-mono">Cargando motor de juego...</div>
+            <div class="text-slate-400 animate-pulse font-mono">Inicializando sistema táctico...</div>
         </div>
     </div>
 
-    <!-- MAIN GAME SCRIPT (APP COMPLETA) -->
+    <!-- MAIN GAME SCRIPT (APP COMPLETA INCRUSTADA) -->
     <script type="text/babel" data-type="module" data-presets="typescript,react">
         import React, { useState, useEffect, useCallback } from 'react';
         import { createRoot } from 'react-dom/client';
         import { GoogleGenAI, Type } from "@google/genai";
 
         // ==========================================
-        // CONSTANTS
+        // 1. CONSTANTS
         // ==========================================
         const GRID_SIZE = 8;
         const MOUNTAINS = [[2, 3], [4, 3], [3, 4], [5, 4]];
@@ -147,7 +151,7 @@
         ];
 
         // ==========================================
-        // UTILS
+        // 2. UTILS
         // ==========================================
         const getDistance = (pos1, pos2) => Math.abs(pos1[0] - pos2[0]) + Math.abs(pos1[1] - pos2[1]);
 
@@ -184,7 +188,7 @@
         };
 
         // ==========================================
-        // AI SERVICE
+        // 3. AI SERVICE
         // ==========================================
         const getAi = () => new GoogleGenAI({ apiKey: window.process.env.API_KEY });
         const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -248,7 +252,7 @@
         };
 
         // ==========================================
-        // COMPONENTS
+        // 4. COMPONENTS
         // ==========================================
         const HealthBar = ({ hp, maxHp }) => {
             const percentage = (hp / maxHp) * 100;
@@ -420,7 +424,9 @@
             );
         };
 
-        // --- APP ---
+        // ==========================================
+        // 5. MAIN APP
+        // ==========================================
         const App = () => {
             const [units, setUnits] = useState(JSON.parse(JSON.stringify(INITIAL_UNITS)));
             const [chests, setChests] = useState(JSON.parse(JSON.stringify(INITIAL_CHESTS)));
@@ -441,9 +447,10 @@
 
             useEffect(() => {
                 // Ensure board is mounted before removing spinner
-                const spinner = document.querySelector('.animate-spin');
+                const root = document.getElementById('root');
+                const spinner = root.querySelector('.animate-spin');
                 if (spinner && spinner.parentElement) {
-                    spinner.parentElement.style.display = 'none';
+                    spinner.parentElement.remove();
                 }
 
                 if (!window.process.env.API_KEY) {
