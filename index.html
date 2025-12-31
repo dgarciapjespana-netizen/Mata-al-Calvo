@@ -9,24 +9,29 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Error Handler -->
+    <!-- 1. GESTOR DE ERRORES GLOBAL (Reemplaza el spinner si algo falla) -->
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             const root = document.getElementById('root');
             if (root) {
                 root.innerHTML = `
-                    <div style="color: #ef4444; padding: 20px; font-family: monospace; background: #1e293b; height: 100vh; overflow: auto;">
-                        <h1 style="font-size: 24px; margin-bottom: 10px;">⚠️ Error Crítico</h1>
-                        <p>${message}</p>
-                        <pre style="background: #0f172a; padding: 10px; border-radius: 5px; margin-top: 10px; color: #cbd5e1;">${error?.stack || ''}</pre>
-                        <button onclick="localStorage.clear(); window.location.reload()" style="margin-top: 20px; padding: 10px; background: #3b82f6; color: white; border-radius: 5px;">Borrar Caché y Recargar</button>
+                    <div style="color: #ef4444; padding: 20px; font-family: monospace; background: #1e293b; height: 100vh; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">💥</div>
+                        <h1 style="font-size: 24px; margin-bottom: 10px; font-weight: bold;">Error de Sistema</h1>
+                        <p style="color: #cbd5e1; margin-bottom: 20px; max-width: 600px;">${message}</p>
+                        <button onclick="localStorage.clear(); window.location.reload()" style="padding: 12px 24px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                            Reiniciar Juego
+                        </button>
+                        <div style="margin-top: 40px; text-align: left; background: #0f172a; padding: 15px; border-radius: 8px; font-size: 12px; color: #64748b; width: 90%; max-width: 600px; overflow-x: auto;">
+                            Detalles técnicos: ${source}:${lineno}
+                        </div>
                     </div>
                 `;
             }
         };
     </script>
 
-    <!-- Polyfill for process.env -->
+    <!-- 2. POLYFILLS -->
     <script>
         window.process = { 
             env: { 
@@ -36,15 +41,15 @@
         };
     </script>
 
-    <!-- Babel -->
+    <!-- 3. BABEL -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Import Map (Strict Versions) -->
+    <!-- 4. IMPORT MAP (LIMPIO Y SIN CONFLICTOS) -->
     <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react": "https://esm.sh/react@18.2.0?dev",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?dev",
     "@google/genai": "https://esm.sh/@google/genai@0.1.1",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
@@ -93,7 +98,8 @@
     <div id="root">
         <div class="flex items-center justify-center h-screen flex-col gap-4">
             <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <div class="text-slate-400 animate-pulse font-mono">Cargando recursos...</div>
+            <div class="text-slate-400 animate-pulse font-mono">Conectando con el servidor táctico...</div>
+            <div class="text-xs text-slate-600">v.1.0.4-stable</div>
         </div>
     </div>
 
@@ -418,9 +424,7 @@
             );
         };
 
-        // ==========================================
-        // MAIN APP
-        // ==========================================
+        // --- APP ---
         const App = () => {
             const [units, setUnits] = useState(JSON.parse(JSON.stringify(INITIAL_UNITS)));
             const [chests, setChests] = useState(JSON.parse(JSON.stringify(INITIAL_CHESTS)));
@@ -440,11 +444,10 @@
             const [apiKeyInput, setApiKeyInput] = useState(window.process.env.API_KEY);
 
             useEffect(() => {
-                // Ensure board is mounted before removing spinner
-                const spinner = document.querySelector('.animate-spin');
-                if (spinner && spinner.parentElement) {
-                    spinner.parentElement.style.display = 'none';
-                }
+                // Remove spinner when app mounts
+                const root = document.getElementById('root');
+                const spinner = root.querySelector('.animate-spin');
+                if (spinner) spinner.parentElement.remove(); // Remove loading container
 
                 if (!window.process.env.API_KEY) {
                     const key = prompt("⚠️ IMPORTANTE ⚠️\n\nEste juego usa Google Gemini AI. Para jugar, necesitas tu propia API Key (es gratis).\n\nIntroduce tu Google Gemini API Key aquí:");
