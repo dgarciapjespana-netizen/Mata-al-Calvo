@@ -14,13 +14,18 @@
         function showError(title, detail) {
             const root = document.getElementById('root');
             if (root) {
-                root.innerHTML = `
-                    <div style="color: #ef4444; padding: 20px; font-family: monospace; background: #1e293b; height: 100vh; overflow: auto;">
-                        <h1 style="font-size: 24px; margin-bottom: 10px;">⚠️ ${title}</h1>
-                        <pre style="background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; white-space: pre-wrap;">${detail}</pre>
-                        <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">Recargar Página</button>
-                    </div>
+                // Remove loading spinner
+                root.innerHTML = ''; 
+                
+                const errorContainer = document.createElement('div');
+                errorContainer.style.cssText = "color: #ef4444; padding: 20px; font-family: monospace; background: #1e293b; height: 100vh; overflow: auto;";
+                
+                errorContainer.innerHTML = `
+                    <h1 style="font-size: 24px; margin-bottom: 10px;">⚠️ ${title}</h1>
+                    <pre style="background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; white-space: pre-wrap; color: #e2e8f0;">${detail}</pre>
+                    <button onclick="localStorage.removeItem('GEMINI_API_KEY'); window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Borrar Datos y Recargar</button>
                 `;
+                root.appendChild(errorContainer);
             }
             console.error(title, detail);
         }
@@ -48,12 +53,12 @@
     <!-- 3. BABEL -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- 4. IMPORT MAP (Limpio y sin versiones mezcladas) -->
+    <!-- 4. IMPORT MAP (CORREGIDO: Solo React 18 y Google GenAI) -->
     <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react": "https://esm.sh/react@18.2.0?dev",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?dev",
     "@google/genai": "https://esm.sh/@google/genai@0.1.1",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
@@ -104,6 +109,7 @@
         <div class="flex items-center justify-center h-screen flex-col gap-4">
             <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             <div class="text-slate-400 animate-pulse font-mono">Iniciando sistema táctico...</div>
+            <div class="text-slate-600 text-xs mt-2">v1.0.3 - React 18</div>
         </div>
     </div>
 
@@ -193,7 +199,8 @@
 
         const getAiActions = async (units, aiActionPoints) => {
             if (!window.process.env.API_KEY) {
-                alert("API Key faltante. Por favor recarga y entra tu clave.");
+                // Si falta la API KEY y estamos dentro del flujo del juego, alertamos
+                // Pero el useEffect de App ya maneja el prompt inicial.
                 return [];
             }
             const ai = getAi();
@@ -627,7 +634,7 @@
                 setGameState('playing');
             };
 
-            const spawnNewEnemyUnit = React.useCallback((currentUnits) => {
+            const spawnNewEnemyUnit = useCallback((currentUnits) => {
                 const AI_SPAWN_POINTS = [[0, 1], [1, 0], [1, 1]];
                 const occupiedPositions = new Set(currentUnits.map(u => u.position.join(',')));
                 const mountainPositions = new Set(MOUNTAINS.map(m => m.join(',')));
@@ -643,7 +650,7 @@
                 return { updatedUnits: [...currentUnits, newUnit], spawnPosition: spawnPoint };
             }, [chests]);
 
-            const executeAiAction = React.useCallback(async (actions) => {
+            const executeAiAction = useCallback(async (actions) => {
                 let currentUnits = [...units];
                 for (const action of actions) {
                     await new Promise(resolve => setTimeout(resolve, 500));
@@ -702,7 +709,7 @@
                 setTurn('human');
             }, [units, round, spawnNewEnemyUnit, chests]);
 
-            React.useEffect(() => {
+            useEffect(() => {
                 if (turn === 'ai' && gameStatus === 'playing' && !aiIsThinking) {
                     const performAiTurn = async () => {
                         setAiIsThinking(true);
